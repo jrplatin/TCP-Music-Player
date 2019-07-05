@@ -1,0 +1,37 @@
+What types of messages does your jukebox protocol send, and what do they mean?
+
+    1) list
+        Client-> "list\n"
+        Response-> Formatted string of songs w/ corresponding IDs
+    2) play -> play song
+        Client-> "play xx\n", xx represents the song number in base 10
+        Response->String with new port number where the audio stream will start
+            "1337\n"
+    3) stop -> stop currently playing song
+        Client-> "stop\n"
+        Server-> "okay\n"
+
+    Upon requesting a song, the server will setup a new socket on an empty port and notify the client of the port number. The client will then connect to this port and receive the audio stream as binary using a separate connection. The original socket will also remain open to listen for additional commands (eg stop). 
+
+How are your messages formatted?  Are they text or binary, and what does the header look like?  How do you determine where one message ends and another begins?
+
+    The command messages defined above are formated as strings, delineated with newline characters (tcp socket)
+    The audio stream socket will send binary (udp socket)
+
+    No additional headers required
+
+What type of state does the server need to store per-client?  What does that state mean (e.g., the fields in the client struct)?
+
+    Store the socket of any ongoing audio streams attributed to the client
+    Store dictionary of IP address to server instances to attribute commands to the correct client
+
+How do messages transition the client/server from one state to another?
+
+    The main command server will keep track of individual clients by using socket.getpeername()
+    It will then lookup the client by peername and call object.receive(commandString) for the individual thread
+        to process.
+
+Anything else I should know about the way it works?
+
+    There will be between 1 and 2 threads running per client at any given time. 
+    
